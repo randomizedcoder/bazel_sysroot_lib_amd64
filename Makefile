@@ -1,4 +1,4 @@
-.PHONY: help update-flake build tarball nix-tarball copy push update-all clean
+.PHONY: help update-flake build tarball nix-tarball copy push force-push update-all clean
 
 # Default target
 help:
@@ -7,6 +7,7 @@ help:
 	@echo "  build        - Build the AMD64 LLVM toolchain using nix build"
 	@echo "  tarball      - Create a .tar.gz archive of the AMD64 LLVM toolchain"
 	@echo "  push         - Push changes to GitHub with dated commit"
+	@echo "  force-push   - Force push changes to GitHub (use with caution)"
 	@echo "  update-all   - Update flake, build, copy, and push"
 	@echo "  nix-tarball  - Create a .tar.gz archive using nix build"
 	@echo "  copy         - Copy files from Nix store to sysroot directory"
@@ -35,7 +36,13 @@ push:
 	git add .
 	git commit -m "Update AMD64 LLVM toolchain $(shell date +%Y-%m-%d)" || true
 	git remote set-url origin git@github.com:randomizedcoder/bazel_sysroot_lib_amd64.git
-	git push
+	git push --force
+
+force-push:
+	git add .
+	git commit -m "Update AMD64 LLVM toolchain $(shell date +%Y-%m-%d)" || true
+	git remote set-url origin git@github.com:randomizedcoder/bazel_sysroot_lib_amd64.git
+	git push --force
 
 update-all: update-flake build copy push
 
