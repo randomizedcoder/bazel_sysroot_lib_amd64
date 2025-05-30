@@ -30,7 +30,7 @@ tarball: build
 copy: build
 	rm -rf sysroot
 	mkdir -p sysroot
-	rsync -av --delete --exclude 'llvm-exegesis' result/ sysroot/
+	rsync -av --delete --exclude 'llvm-exegesis' result/sysroot/ sysroot/
 
 push:
 	git add .

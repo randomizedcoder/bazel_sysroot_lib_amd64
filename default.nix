@@ -1,87 +1,185 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  # LLVM toolchain for AMD64
-  llvmToolchain = pkgs.llvmPackages_20.llvm;
-  clang = pkgs.llvmPackages_20.libcxxClang;
-  lld = pkgs.llvmPackages_20.lld;
-  libcxx = pkgs.llvmPackages_20.libcxx;
+  # AMD64-specific libraries and headers
+  amd64Libs = with pkgs; [
+    # Core system libraries
+    glibc
+    glibc.dev
+    glibc.static
+    gcc-unwrapped
+    gcc-unwrapped.lib
+    gcc-unwrapped.out
+
+    # Compression libraries
+    zlib
+    zlib.dev
+    zlib.static
+    bzip2
+    bzip2.dev
+    xz
+    xz.dev
+
+    # XML and parsing
+    libxml2
+    libxml2.dev
+    libxml2.out
+    expat
+    expat.dev
+    expat.out
+
+    # Networking
+    openssl
+    openssl.dev
+    openssl.out
+    curl
+    curl.dev
+    curl.out
+
+    # Text processing
+    pcre
+    pcre.dev
+    pcre.out
+    pcre2
+    pcre2.dev
+    pcre2.out
+
+    # JSON
+    jansson
+    jansson.dev
+    jansson.out
+
+    # Database
+    sqlite
+    sqlite.dev
+    sqlite.out
+
+    # Image processing
+    libpng
+    libpng.dev
+    libpng.out
+    libjpeg
+    libjpeg.dev
+    libjpeg.out
+
+    # System utilities
+    util-linux
+    util-linux.dev
+    util-linux.out
+  ];
 in
 pkgs.stdenv.mkDerivation {
-  name = "bazel-llvm-amd64";
+  name = "bazel-sysroot-amd64";
   version = "1.0.0";
 
-  buildInputs = [ llvmToolchain clang lld libcxx pkgs.coreutils ];
+  buildInputs = amd64Libs;
 
   buildCommand = ''
-    # Create toolchain directory structure
-    mkdir -p $out/{bin,lib,include}
+    # Create sysroot directory structure
+    mkdir -p $out/sysroot/{include,lib}
 
-    # Copy LLVM binaries
-    echo "Copying LLVM binaries..."
-    if [ -d "${llvmToolchain}/bin" ]; then
-      # Exclude llvm-exegesis as it's a large benchmarking tool not needed for compilation
-      find "${llvmToolchain}/bin" -type f ! -name "llvm-exegesis" -exec cp -L {} $out/bin/ \;
-    fi
-    if [ -d "${clang}/bin" ]; then
-      find "${clang}/bin" -type f ! -name "llvm-exegesis" -exec cp -L {} $out/bin/ \;
-    fi
-    if [ -d "${lld}/bin" ]; then
-      find "${lld}/bin" -type f ! -name "llvm-exegesis" -exec cp -L {} $out/bin/ \;
-    fi
+    # Copy headers
+    echo "Copying headers..."
+    if [ -d "${pkgs.glibc.dev}/include" ]; then cp -r ${pkgs.glibc.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.gcc-unwrapped.lib}/include" ]; then cp -r ${pkgs.gcc-unwrapped.lib}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.zlib.dev}/include" ]; then cp -r ${pkgs.zlib.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.bzip2.dev}/include" ]; then cp -r ${pkgs.bzip2.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.xz.dev}/include" ]; then cp -r ${pkgs.xz.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.libxml2.dev}/include" ]; then cp -r ${pkgs.libxml2.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.expat.dev}/include" ]; then cp -r ${pkgs.expat.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.openssl.dev}/include" ]; then cp -r ${pkgs.openssl.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.curl.dev}/include" ]; then cp -r ${pkgs.curl.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.pcre.dev}/include" ]; then cp -r ${pkgs.pcre.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.pcre2.dev}/include" ]; then cp -r ${pkgs.pcre2.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.jansson.dev}/include" ]; then cp -r ${pkgs.jansson.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.sqlite.dev}/include" ]; then cp -r ${pkgs.sqlite.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.libpng.dev}/include" ]; then cp -r ${pkgs.libpng.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.libjpeg.dev}/include" ]; then cp -r ${pkgs.libjpeg.dev}/include/* $out/sysroot/include/ || true; fi
+    if [ -d "${pkgs.util-linux.dev}/include" ]; then cp -r ${pkgs.util-linux.dev}/include/* $out/sysroot/include/ || true; fi
 
-    # Copy coreutils binaries
-    echo "Copying coreutils binaries..."
-    if [ -d "${pkgs.coreutils}/bin" ]; then
-      cp -r ${pkgs.coreutils}/bin/* $out/bin/ || true
-    fi
+    # Copy libraries
+    echo "Copying libraries..."
+    if [ -d "${pkgs.glibc}/lib" ]; then cp -r ${pkgs.glibc}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.glibc.dev}/lib" ]; then cp -r ${pkgs.glibc.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.glibc.static}/lib" ]; then cp -r ${pkgs.glibc.static}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.gcc-unwrapped.lib}/lib" ]; then cp -r ${pkgs.gcc-unwrapped.lib}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.gcc-unwrapped.out}/lib" ]; then cp -r ${pkgs.gcc-unwrapped.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.zlib}/lib" ]; then cp -r ${pkgs.zlib}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.zlib.dev}/lib" ]; then cp -r ${pkgs.zlib.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.zlib.static}/lib" ]; then cp -r ${pkgs.zlib.static}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.bzip2}/lib" ]; then cp -r ${pkgs.bzip2}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.bzip2.dev}/lib" ]; then cp -r ${pkgs.bzip2.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.xz}/lib" ]; then cp -r ${pkgs.xz}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.xz.dev}/lib" ]; then cp -r ${pkgs.xz.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libxml2}/lib" ]; then cp -r ${pkgs.libxml2}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libxml2.dev}/lib" ]; then cp -r ${pkgs.libxml2.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libxml2.out}/lib" ]; then cp -r ${pkgs.libxml2.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.expat}/lib" ]; then cp -r ${pkgs.expat}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.expat.dev}/lib" ]; then cp -r ${pkgs.expat.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.expat.out}/lib" ]; then cp -r ${pkgs.expat.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.openssl}/lib" ]; then cp -r ${pkgs.openssl}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.openssl.dev}/lib" ]; then cp -r ${pkgs.openssl.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.openssl.out}/lib" ]; then cp -r ${pkgs.openssl.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.curl}/lib" ]; then cp -r ${pkgs.curl}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.curl.dev}/lib" ]; then cp -r ${pkgs.curl.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.curl.out}/lib" ]; then cp -r ${pkgs.curl.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre}/lib" ]; then cp -r ${pkgs.pcre}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre.dev}/lib" ]; then cp -r ${pkgs.pcre.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre.out}/lib" ]; then cp -r ${pkgs.pcre.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre2}/lib" ]; then cp -r ${pkgs.pcre2}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre2.dev}/lib" ]; then cp -r ${pkgs.pcre2.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.pcre2.out}/lib" ]; then cp -r ${pkgs.pcre2.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.jansson}/lib" ]; then cp -r ${pkgs.jansson}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.jansson.dev}/lib" ]; then cp -r ${pkgs.jansson.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.jansson.out}/lib" ]; then cp -r ${pkgs.jansson.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.sqlite}/lib" ]; then cp -r ${pkgs.sqlite}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.sqlite.dev}/lib" ]; then cp -r ${pkgs.sqlite.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.sqlite.out}/lib" ]; then cp -r ${pkgs.sqlite.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libpng}/lib" ]; then cp -r ${pkgs.libpng}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libpng.dev}/lib" ]; then cp -r ${pkgs.libpng.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libpng.out}/lib" ]; then cp -r ${pkgs.libpng.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libjpeg}/lib" ]; then cp -r ${pkgs.libjpeg}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libjpeg.dev}/lib" ]; then cp -r ${pkgs.libjpeg.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.libjpeg.out}/lib" ]; then cp -r ${pkgs.libjpeg.out}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.util-linux}/lib" ]; then cp -r ${pkgs.util-linux}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.util-linux.dev}/lib" ]; then cp -r ${pkgs.util-linux.dev}/lib/* $out/sysroot/lib/ || true; fi
+    if [ -d "${pkgs.util-linux.out}/lib" ]; then cp -r ${pkgs.util-linux.out}/lib/* $out/sysroot/lib/ || true; fi
 
-    # Copy LLVM libraries
-    echo "Copying LLVM libraries..."
-    if [ -d "${llvmToolchain}/lib" ]; then
-      # Exclude llvm-exegesis as it's a large benchmarking tool (75MB) not needed for compilation
-      # See https://llvm.org/docs/CommandGuide/llvm-exegesis.html for details
-      find "${llvmToolchain}/lib" -type f -name "*.so*" ! -name "*exegesis*" -exec cp -L {} $out/lib/ \;
-    fi
-    if [ -d "${clang}/lib" ]; then
-      find "${clang}/lib" -type f -name "*.so*" ! -name "*exegesis*" -exec cp -L {} $out/lib/ \;
-    fi
-    if [ -d "${lld}/lib" ]; then
-      find "${lld}/lib" -type f -name "*.so*" ! -name "*exegesis*" -exec cp -L {} $out/lib/ \;
-    fi
-    if [ -d "${libcxx}/lib" ]; then
-      find "${libcxx}/lib" -type f -name "*.so*" ! -name "*exegesis*" -exec cp -L {} $out/lib/ \;
-    fi
+    # Create sysroot.BUILD file
+    cat > $out/sysroot/sysroot.BUILD << 'EOF'
+package(default_visibility = ["//visibility:public"])
 
-    # Copy LLVM headers
-    echo "Copying LLVM headers..."
-    if [ -d "${llvmToolchain}/include" ]; then
-      cp -r ${llvmToolchain}/include/* $out/include/ || true
-    fi
-    if [ -d "${clang}/include" ]; then
-      cp -r ${clang}/include/* $out/include/ || true
-    fi
-    if [ -d "${lld}/include" ]; then
-      cp -r ${lld}/include/* $out/include/ || true
-    fi
-    if [ -d "${libcxx}/include" ]; then
-      cp -r ${libcxx}/include/* $out/include/ || true
-    fi
-
-    # Create toolchain.BUILD file
-    cat > $out/toolchain.BUILD << 'EOF'
-cc_library(
-    name = "llvm_toolchain",
-    srcs = glob(["lib/*.so*"]),
-    hdrs = glob(["include/**/*.h"]),
-    includes = ["include"],
-    linkstatic = 1,
-    visibility = ["//visibility:public"],
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
 )
 
 filegroup(
-    name = "binaries",
-    srcs = glob(["bin/*"]),
+    name = "include",
+    srcs = glob(["include/**"]),
+)
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**"]),
+)
+
+cc_library(
+    name = "system_deps",
+    srcs = glob(["lib/*.so*"]),
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 0,
+    visibility = ["//visibility:public"],
+)
+
+# Separate library for static linking
+cc_library(
+    name = "system_deps_static",
+    srcs = glob(["lib/*.a"]),
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 1,
     visibility = ["//visibility:public"],
 )
 EOF
