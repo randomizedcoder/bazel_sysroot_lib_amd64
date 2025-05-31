@@ -7,29 +7,19 @@ filegroup(
 
 filegroup(
     name = "include",
-    srcs = glob(["include/**"]),
+    srcs = glob(["include/*"]),
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "lib",
-    srcs = glob(["lib/**"]),
-)
-
-cc_library(
-    name = "system_deps",
-    srcs = glob(["lib/*.so*"]),
-    hdrs = glob(["include/**/*.h"]),
-    includes = ["include"],
-    linkstatic = 0,
+    srcs = glob(["lib/*"]),
     visibility = ["//visibility:public"],
 )
 
-# Separate library for static linking
 cc_library(
-    name = "system_deps_static",
-    srcs = glob(["lib/*.a"]),
-    hdrs = glob(["include/**/*.h"]),
-    includes = ["include"],
+    name = "system_libs",
+    srcs = glob(["lib/*.so*"]),
     linkstatic = 1,
     visibility = ["//visibility:public"],
 )
