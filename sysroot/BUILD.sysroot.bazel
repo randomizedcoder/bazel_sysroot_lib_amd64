@@ -1,25 +1,23 @@
 package(default_visibility = ["//visibility:public"])
 
+# Main filegroup that includes everything
 filegroup(
     name = "all",
-    srcs = glob(["**"]),
+    srcs = [":lib"],
 )
 
-filegroup(
-    name = "include",
-    srcs = glob(["include/*"]),
-    visibility = ["//visibility:public"],
-)
-
+# Library directory filegroup
 filegroup(
     name = "lib",
-    srcs = glob(["lib/*"]),
-    visibility = ["//visibility:public"],
+    srcs = glob(["lib/**"]),
+    allow_empty = True,
 )
 
+# AMD64-specific system libraries
 cc_library(
     name = "system_libs",
     srcs = glob(["lib/*.so*"]),
     linkstatic = 1,
     visibility = ["//visibility:public"],
 )
+

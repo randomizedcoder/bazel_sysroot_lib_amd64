@@ -1,88 +1,95 @@
-# Bazel Library Sysroot for AMD64
+# bazel_sysroot_lib_amd64
 
-This repository contains a collection of system libraries and headers for AMD64 architecture that can be used with Bazel builds. Built using Nix, it provides a consistent set of system dependencies across different environments.
+This sysroot provides AMD64-specific shared libraries for Bazel builds. It is designed to be used in conjunction with the common library sysroot (`bazel_sysroot_library`) and the AMD64 LLVM toolchain sysroot (`bazel_sysroot_llvm_amd64`).
 
-## Available Make Targets
+## Purpose
 
-- `make help` - Show available targets and their descriptions
-- `make update-flake` - Update flake.lock with latest dependencies
-- `make build` - Build the AMD64 library sysroot using nix build
-- `make tarball` - Create a .tar.gz archive of the AMD64 library sysroot
-- `make nix-tarball` - Create a .tar.gz archive using nix build
-- `make copy` - Copy files from Nix store to sysroot directory
-- `make push` - Push changes to GitHub with dated commit
-- `make update-all` - Update flake, build, copy, and push
-- `make clean` - Clean up build artifacts
+The `bazel_sysroot_lib_amd64` sysroot serves as the AMD64-specific library provider, containing:
+- AMD64-specific shared libraries (`.so`)
+- AMD64-specific static libraries (`.a`)
+- Architecture-specific system dependencies
 
-## Repository Structure
+## Directory Structure
 
 ```
-.
-├── default.nix      # Nix package definition
-├── flake.nix        # Nix flake configuration
-├── Makefile         # Build and maintenance targets
-├── sysroot/         # Sysroot files (generated)
-│   ├── include/     # System header files
-│   └── lib/         # System library files
-└── .gitignore      # Git ignore rules
+sysroot/
+├── lib/         # AMD64-specific libraries
+└── BUILD.sysroot.bazel
 ```
+
+## BUILD.sysroot.bazel
+
+The BUILD file exposes the following targets:
+
+1. **Filegroups**:
+   - `:all` - Includes the `:lib` filegroup
+   - `:lib` - All library files in the lib directory
+
+2. **Library Target**:
+   - `:system_libs` - AMD64-specific system libraries for static linking
 
 ## Included Libraries
 
-The sysroot includes the following system libraries and their development files:
+The sysroot includes the following AMD64-specific libraries:
 
-- Core system libraries (glibc, gcc)
-- Compression libraries (zlib, bzip2, xz)
-- XML and parsing (libxml2, expat)
-- Networking (openssl, curl)
-- Text processing (pcre, pcre2)
-- JSON (jansson)
-- Database (sqlite)
-- Image processing (libpng, libjpeg)
-- System utilities (util-linux)
+- Core system libraries:
+  - glibc
+  - gcc-unwrapped
 
-## Usage
+- Compression libraries:
+  - zlib
+  - bzip2
+  - xz
 
-1. Build the sysroot:
-   ```bash
-   make build
-   ```
+- XML and parsing:
+  - libxml2
+  - expat
 
-2. Copy files to the repository:
-   ```bash
-   make copy
-   ```
+- Networking:
+  - openssl
+  - curl
 
-3. Create a tarball:
-   ```bash
-   make tarball
-   # or
-   make nix-tarball
-   ```
+- Text processing:
+  - pcre
+  - pcre2
 
-4. Update everything and push:
-   ```bash
-   make update-all
-   ```
+- JSON:
+  - jansson
 
-## Dependencies
+- Database:
+  - sqlite
 
-- Nix package manager
-- rsync (for copying files)
-- git (for version control)
+- Image processing:
+  - libpng
+  - libjpeg
 
-## Bazel Integration
+- System utilities:
+  - util-linux
 
-The sysroot provides two main targets in its BUILD file:
+## Usage in Bazel
 
-- `system_deps`: For dynamic linking (shared libraries)
-- `system_deps_static`: For static linking (static libraries)
+This sysroot is typically used in conjunction with other sysroots:
 
-Example usage in a Bazel BUILD file:
 ```python
-cc_library(
-    name = "my_library",
-    srcs = ["my_library.cpp"],
-    deps = ["@bazel_sysroot_lib_amd64//sysroot:system_deps"],
+llvm.sysroot(
+    name = "llvm_toolchain",
+    targets = ["linux-x86_64"],
+    label = "@bazel_sysroot_tarball_amd64//:sysroot",
+    include_prefix = "@bazel_sysroot_library//:include",
+    lib_prefix = "@bazel_sysroot_lib_amd64//:lib",
+    system_libs = [
+        "@bazel_sysroot_library//:system_deps",
+        "@bazel_sysroot_library//:system_deps_static",
+    ],
 )
 ```
+
+## Building
+
+To build this sysroot:
+
+```bash
+nix-build default.nix
+```
+
+The output will be a directory containing the sysroot structure with all necessary files and the BUILD.sysroot.bazel file.

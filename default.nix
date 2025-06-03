@@ -67,6 +67,31 @@ let
     util-linux.dev
     util-linux.out
   ];
+
+  build_file_content = ''
+package(default_visibility = ["//visibility:public"])
+
+# Main filegroup that includes everything
+filegroup(
+    name = "all",
+    srcs = [":lib"],
+)
+
+# Library directory filegroup
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**"]),
+    allow_empty = True,
+)
+
+# AMD64-specific system libraries
+cc_library(
+    name = "system_libs",
+    srcs = glob(["lib/*.so*"]),
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+)
+'';
 in
 pkgs.stdenv.mkDerivation {
   name = "bazel-sysroot-amd64";
@@ -76,26 +101,7 @@ pkgs.stdenv.mkDerivation {
 
   buildCommand = ''
     # Create sysroot directory structure
-    mkdir -p $out/sysroot/{include,lib}
-
-    # Copy headers
-    echo "Copying headers..."
-    if [ -d "${pkgs.glibc.dev}/include" ]; then cp -r ${pkgs.glibc.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.gcc-unwrapped.lib}/include" ]; then cp -r ${pkgs.gcc-unwrapped.lib}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.zlib.dev}/include" ]; then cp -r ${pkgs.zlib.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.bzip2.dev}/include" ]; then cp -r ${pkgs.bzip2.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.xz.dev}/include" ]; then cp -r ${pkgs.xz.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.libxml2.dev}/include" ]; then cp -r ${pkgs.libxml2.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.expat.dev}/include" ]; then cp -r ${pkgs.expat.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.openssl.dev}/include" ]; then cp -r ${pkgs.openssl.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.curl.dev}/include" ]; then cp -r ${pkgs.curl.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.pcre.dev}/include" ]; then cp -r ${pkgs.pcre.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.pcre2.dev}/include" ]; then cp -r ${pkgs.pcre2.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.jansson.dev}/include" ]; then cp -r ${pkgs.jansson.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.sqlite.dev}/include" ]; then cp -r ${pkgs.sqlite.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.libpng.dev}/include" ]; then cp -r ${pkgs.libpng.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.libjpeg.dev}/include" ]; then cp -r ${pkgs.libjpeg.dev}/include/* $out/sysroot/include/ || true; fi
-    if [ -d "${pkgs.util-linux.dev}/include" ]; then cp -r ${pkgs.util-linux.dev}/include/* $out/sysroot/include/ || true; fi
+    mkdir -p $out/sysroot/lib
 
     # Copy libraries
     echo "Copying libraries..."
@@ -146,32 +152,8 @@ pkgs.stdenv.mkDerivation {
     if [ -d "${pkgs.util-linux.out}/lib" ]; then cp -r ${pkgs.util-linux.out}/lib/* $out/sysroot/lib/ || true; fi
 
     # Create sysroot.BUILD file
-    cat > $out/sysroot/sysroot.BUILD << 'EOF'
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "all",
-    srcs = glob(["**"]),
-)
-
-filegroup(
-    name = "include",
-    srcs = glob(["include/*"]),
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "lib",
-    srcs = glob(["lib/*"]),
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "system_libs",
-    srcs = glob(["lib/*.so*"]),
-    linkstatic = 1,
-    visibility = ["//visibility:public"],
-)
+    cat > $out/sysroot/BUILD.sysroot.bazel << 'EOF'
+${build_file_content}
 EOF
   '';
 }
