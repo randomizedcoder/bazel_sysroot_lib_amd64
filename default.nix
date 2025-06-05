@@ -108,7 +108,16 @@ pkgs.stdenv.mkDerivation {
     if [ -d "${pkgs.glibc}/lib" ]; then cp -r ${pkgs.glibc}/lib/* $out/sysroot/lib/ || true; fi
     if [ -d "${pkgs.glibc.dev}/lib" ]; then cp -r ${pkgs.glibc.dev}/lib/* $out/sysroot/lib/ || true; fi
     if [ -d "${pkgs.glibc.static}/lib" ]; then cp -r ${pkgs.glibc.static}/lib/* $out/sysroot/lib/ || true; fi
-    if [ -d "${pkgs.gcc-unwrapped.lib}/lib" ]; then cp -r ${pkgs.gcc-unwrapped.lib}/lib/* $out/sysroot/lib/ || true; fi
+    # Handle gcc-unwrapped.lib carefully to dereference symlinks like libgcc_s.so
+    if [ -d "${pkgs.gcc-unwrapped.lib}/lib" ]; then
+      echo "Copying from ${pkgs.gcc-unwrapped.lib}/lib..."
+      # Use cp -L to dereference symlinks before copying
+      cp -Lr ${pkgs.gcc-unwrapped.lib}/lib/* $out/sysroot/lib/ || true
+      # Ensure common symlinks like libgcc_s.so.1 point to the copied file if they existed
+      if [ -L "${pkgs.gcc-unwrapped.lib}/lib/libgcc_s.so.1" ] && [ -e "$out/sysroot/lib/$(readlink ${pkgs.gcc-unwrapped.lib}/lib/libgcc_s.so.1)" ]; then
+        ln -sf "$(readlink ${pkgs.gcc-unwrapped.lib}/lib/libgcc_s.so.1)" "$out/sysroot/lib/libgcc_s.so.1"
+      fi
+    fi
     if [ -d "${pkgs.gcc-unwrapped.out}/lib" ]; then cp -r ${pkgs.gcc-unwrapped.out}/lib/* $out/sysroot/lib/ || true; fi
     if [ -d "${pkgs.zlib}/lib" ]; then cp -r ${pkgs.zlib}/lib/* $out/sysroot/lib/ || true; fi
     if [ -d "${pkgs.zlib.dev}/lib" ]; then cp -r ${pkgs.zlib.dev}/lib/* $out/sysroot/lib/ || true; fi
